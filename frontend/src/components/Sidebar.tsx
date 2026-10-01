@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import RadarLogo from "./RadarLogo";
 import {
   LayoutDashboard,
   FlaskConical,
@@ -39,24 +39,15 @@ export default function Sidebar() {
               width: 36,
               height: 36,
               borderRadius: "10px",
-              overflow: "hidden",
+              background: "rgba(255, 255, 255, 0.05)",
               border: "1px solid var(--border-color)",
-              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            {/* User-uploaded logo */}
-            <Image
-              src="/logo.png"
-              alt="RadarAI Logo"
-              width={34}
-              height={34}
-              style={{ objectFit: "contain" }}
-              priority
-            />
+            <RadarLogo size={24} color="#f8fafc" />
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>

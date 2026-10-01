@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
+import RadarLogo from "@/components/RadarLogo";
 import { useAppStore } from "@/lib/store";
 import {
   getGitHubToken, setGitHubToken,
@@ -692,11 +692,11 @@ export default function DashboardPage() {
           <div className="glass-card" style={{ padding: 48, textAlign: "center", marginBottom: 22 }}>
             <div style={{
               width: 52, height: 52, borderRadius: "14px",
-              background: "#ffffff", display: "flex", alignItems: "center",
+              background: "rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center",
               justifyContent: "center", margin: "0 auto 16px",
               border: "1px solid var(--border-color)",
             }}>
-              <Image src="/logo.png" alt="Radar Logo" width={42} height={42} />
+              <RadarLogo size={32} color="#f8fafc" />
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
               {progress || "Executing Radar Multi-Vector Inspection..."}
@@ -733,11 +733,11 @@ export default function DashboardPage() {
           <div className="glass-card" style={{ padding: 44, textAlign: "center", marginBottom: 22 }}>
             <div style={{
               width: 56, height: 56, borderRadius: "14px",
-              background: "#ffffff", display: "flex", alignItems: "center",
+              background: "rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center",
               justifyContent: "center", margin: "0 auto 16px",
               border: "1px solid var(--border-color)",
             }}>
-              <Image src="/logo.png" alt="RadarAI Logo" width={46} height={46} priority />
+              <RadarLogo size={36} color="#f8fafc" />
             </div>
             <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6, letterSpacing: "-0.02em" }}>
               Radar<span style={{ color: "var(--text-muted)", fontWeight: 400 }}>AI</span> Release Gatekeeper

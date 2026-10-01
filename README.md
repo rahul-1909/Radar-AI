@@ -30,34 +30,36 @@
 RadarAI orchestrates a stateful multi-agent pipeline using LangGraph:
 
 ```mermaid
-flowchart LR
-    subgraph Client["Client Browser"]
-        UI["Next.js 16 (Samsung One UI)"]
-        Store[("Local Session Storage<br/>Client-side Keys & Tokens")]
+flowchart TD
+    subgraph Client["Client Interface"]
+        UI["Next.js 16 Web Dashboard (Samsung One UI)"]
+        Store[("Local Session Storage")]
         UI <--> Store
     end
 
-    subgraph Platform["RadarAI Express Backend"]
-        MW["Security & Rate Limiting<br/>Helmet · CORS · Session Guards"]
-        Routes["API Endpoints<br/>/dashboard · /predict-risk · /code-fixes"]
+    subgraph Platform["RadarAI Platform Core"]
+        MW["Security & Rate Limiting (Helmet · CORS · Session Isolation)"]
+        API["API Endpoints (/dashboard · /test-studio · /code-fixes · /ask)"]
         Graph["LangGraph Multi-Agent Orchestrator"]
         Engine["Deterministic Risk Engine"]
-        LLM["Multi-Provider LLM Fallback<br/>Groq → OpenRouter → Gemini → OpenAI"]
-        BrowserEngine["Headless Chromium Driver"]
+        LLM["AI Multi-Provider (Groq · Gemini · OpenRouter · OpenAI)"]
+        Chromium["Headless Chromium Driver (Selenium Automation)"]
 
-        MW --> Routes --> Graph
+        MW --> API --> Graph
         Graph --> Engine
         Graph --> LLM
-        Graph --> BrowserEngine
+        Graph --> Chromium
     end
 
-    Target["Target Website Under Test"]
-    GitHub["GitHub API & Source Codeload"]
+    subgraph Targets["Target Infrastructure"]
+        Web["Target Web Application (DOM · Endpoints · SSL)"]
+        Repo["GitHub Repository (Source Trees & PRs)"]
+    end
 
-    UI -- "HTTPS + X-Session-Id" --> MW
-    Graph -- "Crawl & Probing" --> Target
-    BrowserEngine -- "Headless Automation" --> Target
-    Routes -- "Source Analysis" --> GitHub
+    UI -->|HTTPS + Session ID| MW
+    Chromium -->|Browser Automation| Web
+    Graph -->|Newman API & Security Probes| Web
+    API -->|Source Code Analysis| Repo
 ```
 
 ### LangGraph Agent Execution Flow

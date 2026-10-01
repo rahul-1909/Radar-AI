@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -9,7 +10,6 @@ import {
   Activity,
   Code2,
   MessageSquare,
-  Radio,
   Cpu,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
@@ -30,60 +30,58 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      {/* Samsung One UI Header Section */}
-      <div style={{ padding: "24px 20px 18px", borderBottom: "1px solid var(--border-color)" }}>
+      {/* Brand Header with Uploaded Radar Logo */}
+      <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid var(--border-color)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
               position: "relative",
-              width: 38,
-              height: 38,
-              borderRadius: "14px",
-              background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+              width: 36,
+              height: 36,
+              borderRadius: "10px",
+              overflow: "hidden",
+              border: "1px solid var(--border-color)",
+              background: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(37, 99, 235, 0.4)",
+              flexShrink: 0,
             }}
           >
-            <Radio size={20} color="#ffffff" />
-            <span
-              style={{
-                position: "absolute",
-                top: -2,
-                right: -2,
-                width: 9,
-                height: 9,
-                borderRadius: "50%",
-                background: "#10b981",
-                border: "2px solid #101626",
-              }}
+            {/* User-uploaded logo */}
+            <Image
+              src="/logo.png"
+              alt="RadarAI Logo"
+              width={34}
+              height={34}
+              style={{ objectFit: "contain" }}
+              priority
             />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              Radar<span style={{ color: "var(--accent-blue)" }}>AI</span>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+              Radar<span style={{ color: "var(--text-muted)", fontWeight: 400 }}>AI</span>
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
-              Release Intelligence
+              Release Gatekeeper
             </div>
           </div>
         </div>
 
-        {/* Live Scan Pill when pipeline is running */}
+        {/* Live Scan Notification */}
         {progress && (
           <div
             style={{
-              marginTop: 14,
-              padding: "6px 12px",
-              borderRadius: 9999,
-              background: "rgba(59, 130, 246, 0.12)",
-              border: "1px solid rgba(59, 130, 246, 0.25)",
+              marginTop: 12,
+              padding: "6px 10px",
+              borderRadius: 8,
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid var(--border-color)",
               display: "flex",
               alignItems: "center",
               gap: 8,
               fontSize: 11,
-              color: "#93c5fd",
+              color: "var(--text-secondary)",
             }}
           >
             <span
@@ -92,7 +90,6 @@ export default function Sidebar() {
                 height: 6,
                 borderRadius: "50%",
                 background: "var(--accent-blue)",
-                boxShadow: "0 0 8px var(--accent-blue)",
               }}
             />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -102,8 +99,8 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Navigation Pill List */}
-      <nav style={{ padding: "14px 4px", flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Navigation Links */}
+      <nav style={{ padding: "12px 0", flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -113,73 +110,40 @@ export default function Sidebar() {
               href={item.href}
               className={`sidebar-link ${isActive ? "active" : ""}`}
             >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "9px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: isActive ? "rgba(59, 130, 246, 0.2)" : "rgba(255, 255, 255, 0.04)",
-                  color: isActive ? "#60a5fa" : "var(--text-secondary)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <Icon size={16} />
-              </div>
+              <Icon size={16} color={isActive ? "#ffffff" : "var(--text-secondary)"} />
               <span style={{ flex: 1 }}>{item.label}</span>
-              {isActive && (
-                <span
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: "50%",
-                    background: "var(--accent-blue)",
-                    boxShadow: "0 0 6px var(--accent-blue)",
-                  }}
-                />
-              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Samsung One UI Bottom AI Status Widget */}
-      <div style={{ padding: "14px 16px", borderTop: "1px solid var(--border-color)", margin: "0 6px 6px" }}>
+      {/* Engine Status Card */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border-color)" }}>
         <div
           style={{
-            padding: "10px 14px",
-            borderRadius: "18px",
-            background: "rgba(255, 255, 255, 0.03)",
+            padding: "10px 12px",
+            borderRadius: "14px",
+            background: "rgba(255, 255, 255, 0.02)",
             border: "1px solid var(--border-color)",
             display: "flex",
-            flexDirection: "column",
-            gap: 6,
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>
-              <Cpu size={13} color="var(--accent-violet)" />
-              <span>AI Engine</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Cpu size={14} color="var(--text-muted)" />
+            <div style={{ fontSize: 11.5, fontWeight: 500, color: "var(--text-secondary)" }}>
+              {aiInfo?.mode === "live" ? aiInfo.label : "Rule-based Engine"}
             </div>
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: aiInfo?.mode === "live" ? "var(--accent-green)" : "var(--accent-amber)",
-                boxShadow: aiInfo?.mode === "live" ? "0 0 6px var(--accent-green)" : "none",
-              }}
-            />
           </div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.3 }}>
-            {aiInfo
-              ? aiInfo.mode === "live"
-                ? `${aiInfo.label}${aiInfo.fallbacks?.length ? ` (+${aiInfo.fallbacks.length} fb)` : ""}`
-                : "Rule-Based Mode"
-              : "Detecting engine..."}
-          </div>
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: aiInfo?.mode === "live" ? "var(--accent-green)" : "var(--accent-amber)",
+            }}
+          />
         </div>
       </div>
     </aside>

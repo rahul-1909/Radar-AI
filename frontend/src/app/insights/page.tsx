@@ -18,12 +18,8 @@ import {
   Zap,
   BarChart3,
   Timer,
-  Gauge,
   ThumbsUp,
   ThumbsDown,
-  Clock,
-  Activity,
-  Award,
   ArrowRight,
   Sparkles,
 } from "lucide-react";

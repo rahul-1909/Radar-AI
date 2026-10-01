@@ -308,7 +308,6 @@ export default function TestStudioPage() {
             {filteredTests.map((test) => {
               const isExpanded = expandedTest === test.id;
               const config = typeConfig[test.type] || typeConfig.functional;
-              const Icon = config.icon;
               const isPassed = test.passed === true;
 
               return (

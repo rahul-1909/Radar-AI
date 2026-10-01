@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import { useAppStore } from "@/lib/store";
 import {
-  MessageSquare,
   Send,
   Loader2,
   FileCode2,

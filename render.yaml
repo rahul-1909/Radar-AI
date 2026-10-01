@@ -1,0 +1,32 @@
+# Render Blueprint — deploys the backend API as a Docker web service.
+# Render dashboard → New → Blueprint → select this repo.
+# The frontend is deployed separately on Vercel (see README → Deployment).
+
+services:
+  - type: web
+    name: radar-ai-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Your Vercel frontend URL, e.g. https://radar-ai.vercel.app
+      - key: FRONTEND_URL
+        sync: false
+      # AI keys — every key set joins the fallback chain
+      # (Groq → OpenRouter → Gemini). Leave all empty for rule-based mode.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      # Optional: raises GitHub API limit for repo info (not needed for code)
+      - key: GITHUB_TOKEN
+        sync: false
+      # One headless Chrome at a time fits the 512 MB free instance
+      - key: SELENIUM_MAX_CONCURRENCY
+        value: "1"

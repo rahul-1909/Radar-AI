@@ -1,0 +1,181 @@
+# ─── RadarAI CI/CD Quality Pipeline ───────────────────────────────────────────
+# Runs lint, test, build, and automated release risk gating on every push/PR.
+# Acts as the automated RadarAI Release Gatekeeper.
+
+name: RadarAI Release Intelligence CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─── Stage 1: Lint & Type Check ─────────────────────────────────────────────
+  lint:
+    name: 🔍 Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit
+        working-directory: frontend
+
+      - name: ESLint
+        run: npm run lint
+        working-directory: frontend
+
+  # ─── Stage 2: Backend Tests ─────────────────────────────────────────────────
+  backend-test:
+    name: 🧪 Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Health Check (Start & Verify)
+        run: |
+          node src/index.js &
+          for i in $(seq 1 30); do curl -sf http://localhost:5000/api/health > /dev/null && break; sleep 1; done
+          curl -f http://localhost:5000/api/health || exit 1
+          kill %1
+        working-directory: backend
+
+  # ─── Stage 2b: Backend Docker Image (what Render deploys) ───────────────────
+  docker-build:
+    name: 🐳 Backend Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t radar-ai-api ./backend
+
+      - name: Start container & verify health + Chromium
+        run: |
+          docker run -d --name api -p 5000:5000 radar-ai-api
+          for i in $(seq 1 30); do curl -sf http://localhost:5000/api/health && break; sleep 2; done
+          curl -sf http://localhost:5000/api/health
+          docker exec api chromium --version
+          docker exec api chromedriver --version
+          docker rm -f api
+
+  # ─── Stage 3: Frontend Build ────────────────────────────────────────────────
+  build:
+    name: 🏗️ Build Frontend
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build Next.js
+        run: npm run build
+        working-directory: frontend
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: frontend/.next
+          retention-days: 7
+
+  # ─── Stage 4: Risk Assessment Gate ──────────────────────────────────────────
+  risk-gate:
+    name: 🚦 Risk Assessment Gate
+    runs-on: ubuntu-latest
+    needs: [backend-test, docker-build, build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Start Backend & Run Risk Prediction
+        # Set the repository variable RISK_GATE_URL (Settings → Secrets and
+        # variables → Actions → Variables) to the site this gate should check,
+        # e.g. your deployed frontend. Without it the gate is skipped.
+        env:
+          RISK_GATE_URL: ${{ vars.RISK_GATE_URL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$RISK_GATE_URL" ]; then
+            echo "::notice::Risk gate skipped — set the RISK_GATE_URL repository variable to enable it"
+            exit 0
+          fi
+
+          node src/index.js &
+          for i in $(seq 1 30); do curl -sf http://localhost:5000/api/health > /dev/null && break; sleep 1; done
+
+          SID='X-Session-Id: ci-risk-gate-run'
+          jq -n --arg url "$RISK_GATE_URL" '{name: "CI", websiteUrl: $url}' \
+            | curl -sf -X POST http://localhost:5000/api/configure-project -H 'Content-Type: application/json' -H "$SID" -d @- > /dev/null
+
+          echo "🔍 Running the agent pipeline against $RISK_GATE_URL..."
+          curl -sf http://localhost:5000/api/dashboard-data -H "$SID" > /dev/null
+          RISK_RESPONSE=$(curl -s -X POST http://localhost:5000/api/predict-risk -H 'Content-Type: application/json' -H "$SID" -d '{}')
+
+          RISK_SCORE=$(echo "$RISK_RESPONSE" | jq '.risk.riskScore')
+          DECISION=$(echo "$RISK_RESPONSE" | jq -r '.gatekeeper.decision')
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Risk Score: $RISK_SCORE / 100"
+          echo "Gatekeeper Decision: $DECISION"
+          echo "$RISK_RESPONSE" | jq -r '.gatekeeper.blockers[]? | "  ✗ " + .'
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          kill %1
+          if [ "$DECISION" = "BLOCKED" ]; then
+            echo "::error::Deployment blocked by the risk gate (score: $RISK_SCORE)"
+            exit 1
+          fi
+          echo "✅ Deployment approved"
+        working-directory: backend
+
+  # ─── Stage 5: Deploy (on main only) ────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: [risk-gate]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Notification
+        run: |
+          echo "🚀 All checks passed! Deployment approved by RadarAI Gatekeeper."
+          echo "Deploying to hosting platform (Vercel, Render, AWS)..."

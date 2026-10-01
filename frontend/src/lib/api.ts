@@ -4,7 +4,8 @@
  * Centralized fetch wrappers for all backend API endpoints.
  */
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+const rawBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+const API_BASE = rawBaseUrl.endsWith('/api') ? rawBaseUrl : `${rawBaseUrl}/api`;
 
 // ─── Browser-local storage ─────────────────────────────────────────────────
 // Each browser gets its own session so users of a shared deployment never see

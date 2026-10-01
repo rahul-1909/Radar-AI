@@ -66,14 +66,14 @@ app.use((req, res, next) => {
 });
 
 // Per-user state isolation (see services/sessionStore.js)
-app.use('/api', sessionMiddleware);
+app.use(['/api', '/'], sessionMiddleware);
 
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 // General limit for all API calls, plus a stricter one for endpoints that
 // crawl sites, launch browsers, or call the AI model.
 const rateLimitMessage = (what) => ({ error: 'Too many requests', message: `Too many ${what}. Please wait a few minutes and try again.` });
 
-app.use('/api', rateLimit({
+app.use(['/api', '/'], rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: parseInt(process.env.RATE_LIMIT_GENERAL || '600', 10),
   standardHeaders: 'draft-7',
@@ -88,9 +88,14 @@ const heavyLimiter = rateLimit({
   legacyHeaders: false,
   message: rateLimitMessage('analysis runs'),
 });
-app.use(['/api/dashboard-data', '/api/generate-tests', '/api/code-fixes', '/api/ask', '/api/predict-risk', '/api/github-repo', '/api/detect-login'], heavyLimiter);
 
+const heavyEndpoints = [
+  '/api/dashboard-data', '/api/generate-tests', '/api/code-fixes', '/api/ask', '/api/predict-risk', '/api/github-repo', '/api/detect-login',
+  '/dashboard-data', '/generate-tests', '/code-fixes', '/ask', '/predict-risk', '/github-repo', '/detect-login'
+];
+app.use(heavyEndpoints, heavyLimiter);
 
+// Mount routes on /api
 app.use('/api', testsRoutes);
 app.use('/api', riskRoutes);
 app.use('/api', dashboardRoutes);
@@ -99,8 +104,16 @@ app.use('/api', codeFixesRoutes);
 app.use('/api', askRoutes);
 app.use('/api', metricsRoutes);
 
+// Also mount routes on root / for maximum resilience
+app.use('/', testsRoutes);
+app.use('/', riskRoutes);
+app.use('/', dashboardRoutes);
+app.use('/', projectRoutes);
+app.use('/', codeFixesRoutes);
+app.use('/', askRoutes);
+app.use('/', metricsRoutes);
 
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   const ai = getAIInfo();
   res.json({
     status: 'healthy',
@@ -114,7 +127,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
+  // If no other root GET matched, return service info
   res.json({ service: 'RadarAI Platform API', health: '/api/health' });
 });
 
